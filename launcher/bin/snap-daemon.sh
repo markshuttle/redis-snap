@@ -24,12 +24,12 @@ is_running () {
 }
 
 usage_fail () {
-    echo "Usage: redis.launch [start|stop|restart|force-restart|status]"
+    echo "Usage: redis.launch [start|stop|restart|force-restart|status|init]"
     exit 1
 }
 
 case "$cmd" in
-    start|stop|restart|force-restart|status)
+    start|stop|restart|force-restart|status|init)
         true
         ;;
     "")
@@ -63,6 +63,15 @@ if [ ! -e "$rundir" ]; then
   fi
 fi
 
+if [ "$cmd" = "init" ] ; then
+    # Install default configuration
+    if [ -e "$confdir/redis.conf" ]; then
+        echo "redis: error: redis.conf already installed"
+    else
+        cp -r --preserve=mode "$SNAP/doc/redis.conf" "$confdir/"
+    fi
+fi
+
 # Check for active configurations .
 if ! ls "$confdir"/*.conf >/dev/null 2>/dev/null ; then
     echo "redis: No instances defined in $confdir/<name>.conf"
@@ -74,9 +83,6 @@ fi
 
 for conffile in "$confdir"/*.conf ;
 do
-    if ! conf_read "$conffile" conf; then
-        continue
-    fi
 
     instance_name=`basename "$conffile" .conf`
 
@@ -87,7 +93,7 @@ do
     # The redis snap places pid files in $SNAP_COMMON/run/ and
     # trumps any pid file location in the daemonized config.
     redispidfile="$SNAP_COMMON/run/$instance_name.pid"
-    set -- "$@" --pid-file "$redispidfile"
+    set -- "$@" --pidfile "$redispidfile"
 
     # The redis snap places the database files in $SNAP_COMMON/data/ and
     # overrides any setting in the config file.
@@ -115,7 +121,7 @@ do
         fi
     fi
 
-    if [ "$cmd" = "start" -o "$cmd" = "restart" -o "$cmd" = "force-restart" ] ; then
+    if [ "$cmd"="start" -o "$cmd"="restart" -o "$cmd"="force-restart" -o "$cmd"="init" ] ; then
         # start redis
 
         if [ -e "$redispidfile" ] && is_running "$(cat "$redispidfile")"; then
@@ -124,7 +130,7 @@ do
             if [ -e "$redispidfile" ] ; then
                 rm "$redispidfile"
             fi
-            "$rtdbbin" "$@" --daemonize yes
+            "$redis" "$@" --daemonize yes
         fi
     fi
 
@@ -141,4 +147,5 @@ do
             echo "redis: $instance_name: dead"
         fi
     fi
+
 done

@@ -10,7 +10,7 @@ description: |
 
   Redis is qithout doubt one of the most popular data stores for scale-out
   cloud architectures.
-confinement: devmode
+confinement: strict
 grade: devel
 
 apps:
@@ -19,6 +19,9 @@ apps:
     command: bin/snap-daemon.sh start
     stop-command: bin/snap-daemon.sh stop
     plugs: [ network-bind ]
+  init:
+    command: bin/snap-daemon.sh init
+    plugs: [network-bind ]
   server:
     command: bin/redis-server
     plugs: [ network-bind ]
