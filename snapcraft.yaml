@@ -11,8 +11,38 @@ description: |
   Redis is qithout doubt one of the most popular data stores for scale-out
   cloud architectures.
 confinement: devmode
+grade: devel
+
+apps:
+  launch:
+    daemon: forking
+    command: bin/snap-daemon.sh start
+    stop-command: bin/snap-daemon.sh stop
+    plugs: [ network-bind ]
+  server:
+    command: bin/redis-server
+    plugs: [ network-bind ]
+  redis:
+    command: bin/redis-cli
+    plugs: [ network-bind ]
+  benchmark:
+    command: bin/redis-benchmark
+    plugs: [ network-bind ]
+  check-aof:
+    command: bin/redis-check-aof
+    plugs: [ network-bind ]
 
 parts:
-    redis:
-        plugin: make
-        source: https://github.com/antirez/redis.git
+
+  redis:
+    plugin: make
+    source: https://github.com/antirez/redis.git
+    make-install-var: 'PREFIX'
+
+  launcher:
+    plugin: dump
+    source: launcher
+    stage:
+      - bin/snap-daemon.sh
+      - doc/redis.conf
+
